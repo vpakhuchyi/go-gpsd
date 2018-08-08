@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net"
 	"time"
 )
@@ -239,24 +240,29 @@ func watch(done chan bool, s *Session) {
 	// We're not using a JSON decoder because we first need to inspect
 	// the JSON string to determine it's "class"
 	for {
-		if line, err := s.reader.ReadString('\n'); err == nil {
-			var reportPeek gpsdReport
-			lineBytes := []byte(line)
-			if err = json.Unmarshal(lineBytes, &reportPeek); err == nil {
-				if len(s.filters[reportPeek.Class]) == 0 {
-					continue
-				}
+		line, err := s.reader.ReadString('\n')
+		if err != nil {
+			if err != io.EOF {
+				fmt.Println("Stream reader error (is gpsd running?):", err)
+			}
+			close(done)
+			return
+		}
 
-				if report, err2 := unmarshalReport(reportPeek.Class, lineBytes); err2 == nil {
-					s.deliverReport(reportPeek.Class, report)
-				} else {
-					fmt.Println("JSON parsing error 2:", err)
-				}
+		var reportPeek gpsdReport
+		lineBytes := []byte(line)
+		if err = json.Unmarshal(lineBytes, &reportPeek); err == nil {
+			if len(s.filters[reportPeek.Class]) == 0 {
+				continue
+			}
+
+			if report, err2 := unmarshalReport(reportPeek.Class, lineBytes); err2 == nil {
+				s.deliverReport(reportPeek.Class, report)
 			} else {
-				fmt.Println("JSON parsing error:", err)
+				fmt.Println("JSON parsing error 2:", err)
 			}
 		} else {
-			fmt.Println("Stream reader error (is gpsd running?):", err)
+			fmt.Println("JSON parsing error:", err)
 		}
 	}
 }
