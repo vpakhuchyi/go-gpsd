@@ -251,19 +251,20 @@ func watch(done chan bool, s *Session) {
 
 		var reportPeek gpsdReport
 		lineBytes := []byte(line)
-		if err = json.Unmarshal(lineBytes, &reportPeek); err == nil {
-			if len(s.filters[reportPeek.Class]) == 0 {
-				continue
-			}
-
-			if report, err2 := unmarshalReport(reportPeek.Class, lineBytes); err2 == nil {
-				s.deliverReport(reportPeek.Class, report)
-			} else {
-				fmt.Println("JSON parsing error 2:", err)
-			}
-		} else {
-			fmt.Println("JSON parsing error:", err)
+		if err := json.Unmarshal(lineBytes, &reportPeek); err != nil {
+			fmt.Printf("failed to json unmarshal: %s", err)
+			continue
 		}
+		if len(s.filters[reportPeek.Class]) == 0 {
+			continue
+		}
+
+		report, err := unmarshalReport(reportPeek.Class, lineBytes)
+		if err != nil {
+			fmt.Printf("failed to unmarshal report: %s", err)
+			continue
+		}
+		s.deliverReport(reportPeek.Class, report)
 	}
 }
 
