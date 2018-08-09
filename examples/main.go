@@ -1,6 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	gpsd "github.com/atotto/go-gpsd"
+)
 
 func main() {
 	var gps *gpsd.Session
@@ -10,7 +17,7 @@ func main() {
 		panic(fmt.Sprintf("Failed to connect to GPSD: %s", err))
 	}
 
-	gps.AddFilter("TPV", func(r interface{}) {
+	gps.Subscribe("TPV", func(r interface{}) {
 		tpv := r.(*gpsd.TPVReport)
 		fmt.Println("TPV", tpv.Mode, tpv.Time)
 	})
@@ -20,9 +27,19 @@ func main() {
 
 		fmt.Println("SKY", len(sky.Satellites), "satellites")
 	}
+	tpvFilter := func(r interface{}) {
+		report := r.(*gpsd.TPVReport)
+		fmt.Println("Location updated", report.Lat, report.Lon)
+	}
 
-	gps.AddFilter("SKY", skyfilter)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
-	done := gps.Watch()
-	<-done
+	gps.Subscribe("SKY", skyfilter)
+	gps.Subscribe("TPV", tpvFilter)
+
+	gps.Run()
+	<-sig
+
+	gps.Close()
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -17,9 +18,12 @@ type Filter func(interface{})
 
 // Session represents a connection to gpsd
 type Session struct {
+	address string
 	socket  net.Conn
 	reader  *bufio.Reader
 	filters map[string][]Filter
+
+	done chan struct{}
 }
 
 // Mode describes status of a TPV report
@@ -181,33 +185,53 @@ type Satellite struct {
 }
 
 // Dial opens a new connection to GPSD.
-func Dial(address string) (session *Session, err error) {
-	session = new(Session)
-	session.socket, err = net.Dial("tcp4", address)
-	if err != nil {
+func Dial(address string) (*Session, error) {
+	s := &Session{
+		address: address,
+	}
+	if err := s.dial(); err != nil {
 		return nil, err
 	}
+	s.filters = make(map[string][]Filter)
 
-	session.reader = bufio.NewReader(session.socket)
-	session.reader.ReadString('\n')
-	session.filters = make(map[string][]Filter)
-
-	return
+	return s, nil
 }
 
-// Watch starts watching GPSD reports in a new goroutine.
-//
-// Example
-//    gps := gpsd.Dial(gpsd.DEFAULT_ADDRESS)
-//    done := gpsd.Watch()
-//    <- done
-func (s *Session) Watch() (done chan bool) {
-	fmt.Fprintf(s.socket, "?WATCH={\"enable\":true,\"json\":true}")
-	done = make(chan bool)
+func (s *Session) dial() error {
+	conn, err := net.Dial("tcp4", s.address)
+	if err != nil {
+		return err
+	}
 
-	go watch(done, s)
+	s.socket = conn
+	s.reader = bufio.NewReader(conn)
+	_, err = s.reader.ReadString('\n')
+	return err
+}
 
-	return
+func (s *Session) Close() error {
+	close(s.done)
+	return s.socket.Close()
+}
+
+func (s *Session) Run() {
+	go s.run()
+}
+
+func (s *Session) run() {
+	s.done = make(chan struct{})
+
+	for {
+		select {
+		case <-s.done:
+			return
+		default:
+		}
+		fmt.Fprintf(s.socket, "?WATCH={\"enable\":true,\"json\":true}")
+		s.watch()
+		time.Sleep(time.Second)
+		s.dial()
+	}
 }
 
 // SendCommand sends a command to GPSD
@@ -215,18 +239,7 @@ func (s *Session) SendCommand(command string) {
 	fmt.Fprintf(s.socket, "?"+command+";")
 }
 
-// AddFilter attaches a function which will be called for all
-// GPSD reports with the given class. Callback functions have type Filter.
-//
-// Example:
-//    gps := gpsd.Init(gpsd.DEFAULT_ADDRESS)
-//    gps.AddFilter("TPV", func (r interface{}) {
-//      report := r.(*gpsd.TPVReport)
-//      fmt.Println(report.Time, report.Lat, report.Lon)
-//    })
-//    done := gps.Watch()
-//    <- done
-func (s *Session) AddFilter(class string, f Filter) {
+func (s *Session) Subscribe(class string, f Filter) {
 	s.filters[class] = append(s.filters[class], f)
 }
 
@@ -236,23 +249,31 @@ func (s *Session) deliverReport(class string, report interface{}) {
 	}
 }
 
-func watch(done chan bool, s *Session) {
+func (s *Session) watch() {
 	// We're not using a JSON decoder because we first need to inspect
 	// the JSON string to determine it's "class"
 	for {
+		select {
+		case <-s.done:
+			return
+		default:
+		}
 		line, err := s.reader.ReadString('\n')
 		if err != nil {
-			if err != io.EOF {
-				fmt.Println("Stream reader error (is gpsd running?):", err)
+			if err == io.EOF {
+				return
 			}
-			close(done)
+			if op, ok := err.(*net.OpError); ok && strings.Contains(op.Err.Error(), "use of closed network connection") {
+				return
+			}
+			fmt.Printf("Stream reader error (is gpsd running?): %#v\n", err)
 			return
 		}
 
 		var reportPeek gpsdReport
 		lineBytes := []byte(line)
 		if err := json.Unmarshal(lineBytes, &reportPeek); err != nil {
-			fmt.Printf("failed to json unmarshal: %s", err)
+			fmt.Printf("failed to json unmarshal: %s\n", err)
 			continue
 		}
 		if len(s.filters[reportPeek.Class]) == 0 {
@@ -261,7 +282,7 @@ func watch(done chan bool, s *Session) {
 
 		report, err := unmarshalReport(reportPeek.Class, lineBytes)
 		if err != nil {
-			fmt.Printf("failed to unmarshal report: %s", err)
+			fmt.Printf("failed to unmarshal report: %s\n", err)
 			continue
 		}
 		s.deliverReport(reportPeek.Class, report)
