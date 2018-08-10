@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,33 +10,23 @@ import (
 )
 
 func main() {
-	var gps *gpsd.Session
-	var err error
-
-	if gps, err = gpsd.Dial(gpsd.DefaultAddress); err != nil {
-		panic(fmt.Sprintf("Failed to connect to GPSD: %s", err))
+	gps, err := gpsd.Dial(gpsd.DefaultAddress)
+	if err != nil {
+		log.Fatalf("Failed to connect to GPSD: %s", err)
 	}
 
+	gps.Subscribe("SKY", func(r interface{}) {
+		sky := r.(*gpsd.SKYReport)
+		log.Printf("%s satellites", len(sky.Satellites))
+	})
 	gps.Subscribe("TPV", func(r interface{}) {
 		tpv := r.(*gpsd.TPVReport)
-		fmt.Println("TPV", tpv.Mode, tpv.Time)
+		log.Printf("mode=%v time=%s", tpv.Mode, tpv.Time)
+		log.Printf("Location (%f,%f)", tpv.Lat, tpv.Lon)
 	})
-
-	skyfilter := func(r interface{}) {
-		sky := r.(*gpsd.SKYReport)
-
-		fmt.Println("SKY", len(sky.Satellites), "satellites")
-	}
-	tpvFilter := func(r interface{}) {
-		report := r.(*gpsd.TPVReport)
-		fmt.Println("Location updated", report.Lat, report.Lon)
-	}
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
-
-	gps.Subscribe("SKY", skyfilter)
-	gps.Subscribe("TPV", tpvFilter)
 
 	gps.Run()
 	<-sig
