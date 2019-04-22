@@ -4,7 +4,7 @@
 
 ## Installation
 
-<pre><code># go get github.com/stratoberry/go-gpsd</code></pre>
+<pre><code># go get github.com/atotto/go-gpsd</code></pre>
 
 go-gpsd has no external dependencies.
 
@@ -12,7 +12,7 @@ go-gpsd has no external dependencies.
 
 go-gpsd is a streaming client for GPSD's JSON service and as such can be used only in async manner unlike clients for other languages which support both async and sync modes.
 
-<pre><code>import ("github.com/stratoberry/go-gpsd")
+<pre><code>import ("github.com/atotto/go-gpsd")
 
 func main() {
 	gps := gpsd.Dial("localhost:2947")
@@ -53,7 +53,7 @@ After installing all needed filters, call the `Watch` method to start observing 
 
 ## Documentation
 
-For complete library docs, visit [GoDoc.org](http://godoc.org/github.com/stratoberry/go-gpsd) or take a look at the `gpsd.go` file in this repository.
+For complete library docs, visit [GoDoc.org](http://godoc.org/github.com/atotto/go-gpsd) or take a look at the `gpsd.go` file in this repository.
 
 GPSD's documentation on their JSON protocol can be found at [http://catb.org/gpsd/gpsd_json.html](http://catb.org/gpsd/gpsd_json.html)
 
