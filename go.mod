@@ -1,3 +1,3 @@
-module github.com/atotto/go-gpsd
+module github.com/koppacetic/go-gpsd
 
-go 1.12
+go 1.13

@@ -210,6 +210,7 @@ func (s *Session) dial() error {
 }
 
 func (s *Session) Close() error {
+	fmt.Fprintf(s.socket, "?WATCH={\"enable\":false}")
 	close(s.done)
 	return s.socket.Close()
 }
