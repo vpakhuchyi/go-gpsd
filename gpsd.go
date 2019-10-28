@@ -13,6 +13,8 @@ import (
 // DefaultAddress of gpsd (localhost:2947)
 const DefaultAddress = "localhost:2947"
 
+const dialTimeout = 2 * time.Second
+
 // Filter is a gpsd entry filter function
 type Filter func(interface{})
 
@@ -198,7 +200,7 @@ func Dial(address string) (*Session, error) {
 }
 
 func (s *Session) dial() error {
-	conn, err := net.Dial("tcp4", s.address)
+	conn, err := net.DialTimeout("tcp4", s.address, dialTimeout)
 	if err != nil {
 		return err
 	}
@@ -209,12 +211,14 @@ func (s *Session) dial() error {
 	return err
 }
 
+// Close closes the connection to GPSD
 func (s *Session) Close() error {
 	fmt.Fprintf(s.socket, "?WATCH={\"enable\":false}")
 	close(s.done)
 	return s.socket.Close()
 }
 
+// Run starts monitoring the connection to GPSD
 func (s *Session) Run() {
 	go s.run()
 }
