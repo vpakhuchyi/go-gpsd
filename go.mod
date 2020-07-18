@@ -1,3 +1,3 @@
-module github.com/koppacetic/go-gpsd
+module github.com/noahbjohnson/go-gpsd
 
 go 1.13
