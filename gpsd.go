@@ -14,9 +14,10 @@ import (
 	"time"
 )
 
-// DefaultAddress of gpsd (localhost:2947)
+// DefaultAddress of gpsd
 const DefaultAddress = "localhost:2947"
 
+// dialTimeout is how long the client will wait for gpsd
 const dialTimeout = 2 * time.Second
 
 // Filter is a gpsd entry filter function
@@ -260,7 +261,7 @@ func (s *Session) deliverReport(class string, report interface{}) {
 
 func (s *Session) watch() {
 	// We're not using a JSON decoder because we first need to inspect
-	// the JSON string to determine it's "class"
+	// the JSON string to determine its "class"
 	for {
 		select {
 		case <-s.done:

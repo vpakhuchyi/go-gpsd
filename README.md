@@ -30,7 +30,7 @@ see [example/main.go](./examples/main.go)
 
 For complete library docs, visit [GoDoc.org](http://godoc.org/github.com/noahbjohnson/go-gpsd) or take a look at the `gpsd.go` file in this repository.
 
-GPSD's documentation on their JSON protocol can be found at [https://gpsd.gitlab.io/gpsd/gpsd_json.html](http://catb.org/gpsd/gpsd_json.html)
+GPSD's documentation on their JSON protocol can be found at [https://gpsd.gitlab.io/gpsd/gpsd_json.html](https://gpsd.gitlab.io/gpsd/gpsd_json.html)
 
 To learn more about the Stratoberry Pi project, visit our website at [stratoberry.foi.hr](http://stratoberry.foi.hr).
 
