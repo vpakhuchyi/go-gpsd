@@ -1,3 +1,7 @@
+/*
+Package gpsd is a streaming client for GPSD's JSON service and as such can be used only in
+async manner unlike clients for other languages which support both async and sync modes.
+*/
 package gpsd
 
 import (
@@ -34,7 +38,7 @@ type Mode byte
 const (
 	// NoValueSeen indicates no data has been received yet
 	NoValueSeen Mode = 0
-	// NoFix indicates fix has not been required yet
+	// NoFix indicates fix has not been acquired yet
 	NoFix Mode = 1
 	// Mode2D represents quality of the fix
 	Mode2D Mode = 2
@@ -213,7 +217,7 @@ func (s *Session) dial() error {
 
 // Close closes the connection to GPSD
 func (s *Session) Close() error {
-	fmt.Fprintf(s.socket, "?WATCH={\"enable\":false}")
+	_, _ = fmt.Fprintf(s.socket, "?WATCH={\"enable\":false}")
 	close(s.done)
 	return s.socket.Close()
 }
@@ -232,16 +236,16 @@ func (s *Session) run() {
 			return
 		default:
 		}
-		fmt.Fprintf(s.socket, "?WATCH={\"enable\":true,\"json\":true}")
+		_, _ = fmt.Fprintf(s.socket, "?WATCH={\"enable\":true,\"json\":true}")
 		s.watch()
 		time.Sleep(time.Second)
-		s.dial()
+		_ = s.dial()
 	}
 }
 
 // SendCommand sends a command to GPSD
 func (s *Session) SendCommand(command string) {
-	fmt.Fprintf(s.socket, "?"+command+";")
+	_, _ = fmt.Fprintf(s.socket, "?"+command+";")
 }
 
 func (s *Session) Subscribe(class string, f Filter) {
