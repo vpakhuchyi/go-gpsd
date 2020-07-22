@@ -17,7 +17,7 @@ func main() {
 
 	gps.Subscribe("SKY", func(r interface{}) {
 		sky := r.(*gpsd.SKYReport)
-		log.Printf("%s satellites", len(sky.Satellites))
+		log.Printf("%d satellites", len(sky.Satellites))
 	})
 	gps.Subscribe("TPV", func(r interface{}) {
 		tpv := r.(*gpsd.TPVReport)
