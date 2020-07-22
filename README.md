@@ -14,7 +14,7 @@ go-gpsd is a streaming client for GPSD's JSON service and as such can be used on
 
 see [example/main.go](./examples/main.go)
 
-### Currently supported GPSD report types
+### Current supported GPSD report types
 
 * `VERSION` (`gpsd.VERSIONReport`)
 * `TPV` (`gpsd.TPVReport`)
