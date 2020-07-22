@@ -20,9 +20,13 @@ const (
 
 	// dialTimeout is how long the client will wait for gpsd
 	dialTimeout = 2 * time.Second
+
+	WatchCommand   = "WATCH"
+	PollCommand    = "POLL"
+	VersionCommand = "VERSION"
 )
 
-// Filter is a gpsd entry filter function
+// Filter is a gpsd entry filter function (aka watcher or subscriber)
 type Filter func(interface{})
 
 // Session represents a connection to gpsd
@@ -61,7 +65,7 @@ func (s *Session) dial() error {
 
 // Close closes the connection to GPSD
 func (s *Session) Close() error {
-	_, _ = fmt.Fprintf(s.socket, "?WATCH={\"enable\":false}")
+	s.Watch(map[string]bool{"enable": false})
 	close(s.done)
 	return s.socket.Close()
 }
@@ -80,11 +84,56 @@ func (s *Session) run() {
 			return
 		default:
 		}
-		_, _ = fmt.Fprintf(s.socket, "?WATCH={\"enable\":true,\"json\":true}")
+		s.Watch(map[string]bool{"enable": true, "json": true})
 		s.watch()
 		time.Sleep(time.Second)
 		_ = s.dial()
 	}
+}
+
+// VersionSync sends the version command and returns the version response string
+func (s *Session) VersionSync() string {
+	s.Version()
+	line, _ := s.readLine()
+	return line
+}
+
+// Version sends the version command to GPSD
+func (s *Session) Version() {
+	s.SendCommand(VersionCommand)
+}
+
+// PollSync sends the poll command returns the poll response string
+func (s *Session) PollSync() string {
+	s.Poll()
+	line, _ := s.readLine()
+	return line
+}
+
+// Poll sends the poll command to GPSD
+func (s *Session) Poll() {
+	s.SendCommand(PollCommand)
+}
+
+// WatchSync sends the watch command with an optional param object parsed into
+// the payload and returns the watch response string
+func (s *Session) WatchSync(watchObject ...map[string]bool) string {
+	s.Watch(watchObject...)
+	line, _ := s.readLine()
+	return line
+}
+
+// Watch sends the watch command with an optional param object parsed into the payload
+func (s *Session) Watch(watchObject ...map[string]bool) {
+	objectString := ""
+	if len(watchObject) == 1 {
+		var values []string
+		for k, v := range watchObject[0] {
+			values = append(values, fmt.Sprintf(`"%s":%v`, k, v))
+		}
+		objectString = fmt.Sprintf(`={%s}`, strings.Join(values, ","))
+	}
+	s.SendCommand(WatchCommand + objectString)
 }
 
 // SendCommand sends a command to GPSD
@@ -140,7 +189,6 @@ func (s *Session) watch() {
 			return
 		}
 
-		var reportPeek gpsdReport
 		lineBytes := []byte(line)
 		class := getClass(lineBytes)
 
