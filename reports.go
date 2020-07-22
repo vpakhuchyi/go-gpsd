@@ -6,8 +6,9 @@ type gpsdReport struct {
 	Class string `json:"class"`
 }
 
-/* TPVReport is a Time-Position-Velocity report
-A TPV object is a time-position-velocity report.
+/*
+TPVReport is a Time-Position-Velocity report
+
 The "class" and "mode" fields will reliably be present.
 The "mode" field will be emitted before optional fields that may be absent when there is no fix.
 Error estimates will be emitted after the fix components they're associated with.
@@ -21,11 +22,11 @@ Otherwise gpsd will try to compute the value from the skyview.
 
 example:
 
-{"class":"TPV","device":"/dev/pts/1",
-    "time":"2005-06-08T10:34:48.283Z","ept":0.005,
-    "lat":46.498293369,"lon":7.567411672,"alt":1343.127,
-    "eph":36.000,"epv":32.321,
-    "track":10.3788,"speed":0.091,"climb":-0.085,"mode":3}
+	{"class":"TPV","device":"/dev/pts/1",
+		"time":"2005-06-08T10:34:48.283Z","ept":0.005,
+		"lat":46.498293369,"lon":7.567411672,"alt":1343.127,
+		"eph":36.000,"epv":32.321,
+		"track":10.3788,"speed":0.091,"climb":-0.085,"mode":3}
 
 */
 type TPVReport struct {
@@ -71,7 +72,8 @@ type TPVReport struct {
 	Epc float64 `json:"epc"`
 }
 
-/* SKYReport reports sky view of GPS satellites
+/*
+SKYReport reports sky view of GPS satellites
 
 A SKY object reports a sky view of the GPS satellite positions. If there is no GPS device available, or
 no skyview has been reported yet, only the "class" field will reliably be present.
@@ -85,18 +87,19 @@ estimate in meters when the corresponding DOP is unavailable; some devices use m
 error modeling than the covariance calculation.
 
 example:
-{"class":"SKY","device":"/dev/pts/1",
-    "time":"2005-07-08T11:28:07.114Z",
-    "xdop":1.55,"hdop":1.24,"pdop":1.99,
-    "satellites":[
-        {"PRN":23,"el":6,"az":84,"ss":0,"used":false},
-        {"PRN":28,"el":7,"az":160,"ss":0,"used":false},
-        {"PRN":8,"el":66,"az":189,"ss":44,"used":true},
-        {"PRN":29,"el":13,"az":273,"ss":0,"used":false},
-        {"PRN":10,"el":51,"az":304,"ss":29,"used":true},
-        {"PRN":4,"el":15,"az":199,"ss":36,"used":true},
-        {"PRN":2,"el":34,"az":241,"ss":43,"used":true},
-        {"PRN":27,"el":71,"az":76,"ss":43,"used":true}]}
+
+	{"class":"SKY","device":"/dev/pts/1",
+		"time":"2005-07-08T11:28:07.114Z",
+		"xdop":1.55,"hdop":1.24,"pdop":1.99,
+		"satellites":[
+			{"PRN":23,"el":6,"az":84,"ss":0,"used":false},
+			{"PRN":28,"el":7,"az":160,"ss":0,"used":false},
+			{"PRN":8,"el":66,"az":189,"ss":44,"used":true},
+			{"PRN":29,"el":13,"az":273,"ss":0,"used":false},
+			{"PRN":10,"el":51,"az":304,"ss":29,"used":true},
+			{"PRN":4,"el":15,"az":199,"ss":36,"used":true},
+			{"PRN":2,"el":34,"az":241,"ss":43,"used":true},
+			{"PRN":27,"el":71,"az":76,"ss":43,"used":true}]}
 
 */
 type SKYReport struct {
@@ -148,16 +151,17 @@ type Satellite struct {
 	Used bool `json:"used"`
 }
 
-/* GSTReport is pseudorange noise report
+/*
+GSTReport is pseudorange noise report
 
 pseudorange is the pseudo distance between a satellite and a navigation satellite receiver
 
 example:
 
-{"class":"GST","device":"/dev/ttyUSB0",
-        "time":"2010-12-07T10:23:07.096Z","rms":2.440,
-        "major":1.660,"minor":1.120,"orient":68.989,
-        "lat":1.600,"lon":1.200,"alt":2.520}
+	{"class":"GST","device":"/dev/ttyUSB0",
+			"time":"2010-12-07T10:23:07.096Z","rms":2.440,
+			"major":1.660,"minor":1.120,"orient":68.989,
+			"lat":1.600,"lon":1.200,"alt":2.520}
 
 */
 type GSTReport struct {
@@ -186,7 +190,8 @@ type GSTReport struct {
 	Alt float64 `json:"alt"`
 }
 
-/* ATTReport reports vehicle-attitude from the digital compass or the gyroscope
+/*
+ATTReport reports vehicle-attitude from the digital compass or the gyroscope
 
 An ATT object is a vehicle-attitude report.
 It is returned by digital-compass and gyroscope sensors; depending on device,
@@ -210,10 +215,10 @@ V	magnetometer voltage level alarm
 
 example:
 
-{"class":"ATT","time":1270938096.843,
-    "heading":14223.00,"mag_st":"N",
-    "pitch":169.00,"pitch_st":"N", "roll":-43.00,"roll_st":"N",
-    "dip":13641.000,"mag_x":2454.000}
+	{"class":"ATT","time":1270938096.843,
+		"heading":14223.00,"mag_st":"N",
+		"pitch":169.00,"pitch_st":"N", "roll":-43.00,"roll_st":"N",
+		"dip":13641.000,"mag_x":2454.000}
 
 */
 type ATTReport struct {
@@ -269,7 +274,8 @@ type ATTReport struct {
 	Temperature float64 `json:"temperature"`
 }
 
-/* VERSIONReport returns version details of gpsd client
+/*
+VERSIONReport returns version details of gpsd client
 
 response to "?VERSION" command
 
@@ -277,9 +283,9 @@ The daemon ships a VERSION response to each client when the client first connect
 
 example:
 
-{"class":"VERSION","version":"2.40dev",
-    "rev":"06f62e14eae9886cde907dae61c124c53eb1101f",
-    "proto_major":3,"proto_minor":1
+	{"class":"VERSION","version":"2.40dev",
+		"rev":"06f62e14eae9886cde907dae61c124c53eb1101f",
+		"proto_major":3,"proto_minor":1
 }
 */
 type VERSIONReport struct {
@@ -291,15 +297,16 @@ type VERSIONReport struct {
 	Remote     string `json:"remote"`
 }
 
-/* DEVICESReport lists all devices connected to the system
+/*
+DEVICESReport lists all devices connected to the system
 
 response to "?DEVICES" command
 
 example:
 
-{"class"="DEVICES","devices":[
-    {"class":"DEVICE","path":"/dev/pts/1","flags":1,"driver":"SiRF binary"},
-    {"class":"DEVICE","path":"/dev/pts/3","flags":4,"driver":"AIVDM"}]}
+	{"class"="DEVICES","devices":[
+		{"class":"DEVICE","path":"/dev/pts/1","flags":1,"driver":"SiRF binary"},
+		{"class":"DEVICE","path":"/dev/pts/3","flags":4,"driver":"AIVDM"}]}
 
 The daemon occasionally ships a bare DEVICE object to the client (that is, one not inside a DEVICES wrapper).
 The data content of these objects will be described later as a response to the ?DEVICE command.
