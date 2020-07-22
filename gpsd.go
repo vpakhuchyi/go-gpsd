@@ -142,43 +142,24 @@ func (s *Session) watch() {
 	}
 }
 
-func unmarshalReport(class string, bytes []byte) (interface{}, error) {
-	var err error
-
+func unmarshalReport(class string, bytes []byte) (r interface{}, err error) {
 	switch class {
 	case "TPV":
-		var r *TPVReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(TPVReport)
 	case "SKY":
-		var r *SKYReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(SKYReport)
 	case "GST":
-		var r *GSTReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(GSTReport)
 	case "ATT":
-		var r *ATTReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(ATTReport)
 	case "VERSION":
-		var r *VERSIONReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(VERSIONReport)
 	case "DEVICES":
-		var r *DEVICESReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(DEVICESReport)
 	case "PPS":
-		var r *PPSReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(PPSReport)
 	case "ERROR":
-		var r *ERRORReport
-		err = json.Unmarshal(bytes, &r)
-		return r, err
+		r = new(ERRORReport)
 	}
-
-	return nil, err
+	return r, json.Unmarshal(bytes, &r)
 }
