@@ -102,6 +102,30 @@ func (s *Session) deliverReport(class string, report interface{}) {
 	}
 }
 
+// readLine reads a line from the reader and returns the string
+func (s *Session) readLine() (line string, err error) {
+	line, err = s.reader.ReadString('\n')
+	if err != nil {
+		if err == io.EOF {
+		} else if op, ok := err.(*net.OpError); ok && strings.Contains(
+			op.Err.Error(), "use of closed network connection") {
+		} else {
+			fmt.Printf("Stream reader error (is gpsd running?): %#v\n", err)
+		}
+	}
+	return
+}
+
+// getClass returns the class string for the passed line in case of error, a blank string is returned
+func getClass(line []byte) string {
+	var reportPeek gpsdReport
+	if err := json.Unmarshal(line, &reportPeek); err != nil {
+		fmt.Printf("failed to parse class type: %s\n", err)
+		return ""
+	}
+	return reportPeek.Class
+}
+
 func (s *Session) watch() {
 	// We're not using a JSON decoder because we first need to inspect
 	// the JSON string to determine its "class"
@@ -111,34 +135,26 @@ func (s *Session) watch() {
 			return
 		default:
 		}
-		line, err := s.reader.ReadString('\n')
+		line, err := s.readLine()
 		if err != nil {
-			if err == io.EOF {
-				return
-			}
-			if op, ok := err.(*net.OpError); ok && strings.Contains(op.Err.Error(), "use of closed network connection") {
-				return
-			}
-			fmt.Printf("Stream reader error (is gpsd running?): %#v\n", err)
 			return
 		}
 
 		var reportPeek gpsdReport
 		lineBytes := []byte(line)
-		if err := json.Unmarshal(lineBytes, &reportPeek); err != nil {
-			fmt.Printf("failed to json unmarshal: %s\n", err)
-			continue
-		}
-		if len(s.filters[reportPeek.Class]) == 0 {
+		class := getClass(lineBytes)
+
+		if len(s.filters[class]) == 0 {
 			continue
 		}
 
-		report, err := unmarshalReport(reportPeek.Class, lineBytes)
+		report, err := unmarshalReport(class, lineBytes)
 		if err != nil {
 			fmt.Printf("failed to unmarshal report: %s\n", err)
 			continue
 		}
-		s.deliverReport(reportPeek.Class, report)
+
+		s.deliverReport(class, report)
 	}
 }
 
