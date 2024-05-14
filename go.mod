@@ -1,3 +1,3 @@
-module github.com/noahbjohnson/go-gpsd
+module github.com/vpakhuchyi/go-gpsd
 
-go 1.14
+go 1.19
