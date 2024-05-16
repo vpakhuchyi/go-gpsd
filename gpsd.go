@@ -18,12 +18,15 @@ const (
 	// DefaultAddress of gpsd
 	DefaultAddress = "localhost:2947"
 
-	// dialTimeout is how long the client will wait for gpsd
-	dialTimeout = 2 * time.Second
-
 	WatchCommand   = "WATCH"
 	PollCommand    = "POLL"
 	VersionCommand = "VERSION"
+)
+
+// Available gpsd messages formats.
+const (
+	formatJSON = "json"
+	formatNMEA = "nmea"
 )
 
 // Filter is a gpsd entry filter function (aka watcher or subscriber)
@@ -40,9 +43,7 @@ type Session struct {
 
 // Dial opens a new connection to GPSD.
 func Dial(address string) (*Session, error) {
-	s := &Session{
-		address: address,
-	}
+	s := &Session{address: address}
 	if err := s.dial(); err != nil {
 		return nil, err
 	}
@@ -52,7 +53,7 @@ func Dial(address string) (*Session, error) {
 }
 
 func (s *Session) dial() error {
-	conn, err := net.DialTimeout("tcp4", s.address, dialTimeout)
+	conn, err := net.Dial("tcp4", s.address)
 	if err != nil {
 		return err
 	}
@@ -71,11 +72,11 @@ func (s *Session) Close() error {
 }
 
 // Run starts monitoring the connection to GPSD
-func (s *Session) Run() {
-	go s.run()
+func (s *Session) Run(format string) {
+	go s.run(format)
 }
 
-func (s *Session) run() {
+func (s *Session) run(format string) {
 	s.done = make(chan struct{})
 
 	for {
@@ -84,8 +85,15 @@ func (s *Session) run() {
 			return
 		default:
 		}
-		s.Watch(map[string]bool{"enable": true, "json": true})
-		s.watch()
+		s.Watch(map[string]bool{"enable": true, format: true})
+
+		switch format {
+		case formatJSON:
+			s.watch()
+		case formatNMEA:
+			s.watchNMEA()
+		}
+
 		time.Sleep(time.Second)
 		_ = s.dial()
 	}
@@ -151,6 +159,12 @@ func (s *Session) deliverReport(class string, report interface{}) {
 	}
 }
 
+func (s *Session) deliverNMEAReport(class string, report string) {
+	for _, f := range s.filters[class] {
+		f(report)
+	}
+}
+
 // readLine reads a line from the reader and returns the string
 func (s *Session) readLine() (line string, err error) {
 	line, err = s.reader.ReadString('\n')
@@ -173,6 +187,26 @@ func getClass(line []byte) string {
 		return ""
 	}
 	return reportPeek.Class
+}
+
+func (s *Session) watchNMEA() {
+	for {
+		select {
+		case <-s.done:
+			return
+		default:
+		}
+		line, err := s.readLine()
+		if err != nil {
+			return
+		}
+
+		// NMEA reports are prefixed with "$" that we don't need to include in the class.
+		// Next 5 characters are the class. Here is an example of a GGA report:
+		// $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
+		// So, line[1:6] will give us "GPGGA".ss
+		s.deliverNMEAReport(line[1:6], line)
+	}
 }
 
 func (s *Session) watch() {

@@ -15,20 +15,20 @@ func main() {
 		log.Fatalf("Failed to connect to GPSD: %s", err)
 	}
 
-	gps.Subscribe("SKY", func(r interface{}) {
-		sky := r.(*gpsd.SKYReport)
-		log.Printf("%d satellites", len(sky.Satellites))
+	gps.Subscribe("GPGGA", func(r interface{}) {
+		v := r.(string)
+		log.Printf("GPGGA sentence: %s", v)
 	})
-	gps.Subscribe("TPV", func(r interface{}) {
-		tpv := r.(*gpsd.TPVReport)
-		log.Printf("mode=%v time=%s", tpv.Mode, tpv.Time)
-		log.Printf("Location (%f,%f)", tpv.Lat, tpv.Lon)
+
+	gps.Subscribe("GPGSA", func(r interface{}) {
+		v := r.(string)
+		log.Printf("GPGSA sentence: %s", v)
 	})
 
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGINT)
 
-	gps.Run()
+	gps.Run("nmea")
 	<-sig
 
 	gps.Close()
