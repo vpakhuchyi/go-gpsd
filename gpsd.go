@@ -153,6 +153,12 @@ func (s *Session) Subscribe(class string, f Filter) {
 	s.filters[class] = append(s.filters[class], f)
 }
 
+func (s *Session) SubscribeAll(f Filter) {
+	for class := range s.filters {
+		s.filters[class] = append(s.filters[class], f)
+	}
+}
+
 func (s *Session) deliverReport(class string, report interface{}) {
 	for _, f := range s.filters[class] {
 		f(report)
