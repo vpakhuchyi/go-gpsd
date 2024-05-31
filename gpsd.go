@@ -29,6 +29,18 @@ const (
 	formatNMEA = "nmea"
 )
 
+// Message classes.
+const (
+	msgClassDevices = "DEVICES"
+	msgClassPPS     = "PPS"
+	msgClassError   = "ERROR"
+	msgClassVersion = "VERSION"
+	msgClassTPV     = "TPV"
+	msgClassSKY     = "SKY"
+	msgClassGST     = "GST"
+	msgClassATT     = "ATT"
+)
+
 // Filter is a gpsd entry filter function (aka watcher or subscriber)
 type Filter func(interface{})
 
@@ -201,14 +213,14 @@ func (s *Session) watchNMEA() {
 			return
 		}
 
-		if _, ok := s.filters["DEVICES"]; !ok {
+		if _, ok := s.filters[msgClassDevices]; ok {
 			if strings.HasPrefix(line, `{"class":"DEVICES"`) {
-				report, err := unmarshalReport("DEVICES", []byte(line))
+				report, err := unmarshalReport(msgClassDevices, []byte(line))
 				if err != nil {
 					fmt.Printf("failed to unmarshal report: %s\n", err)
 					continue
 				}
-				s.deliverReport("DEVICES", report)
+				s.deliverReport(msgClassDevices, report)
 				continue
 			}
 		}
@@ -254,21 +266,21 @@ func (s *Session) watchJSON() {
 
 func unmarshalReport(class string, bytes []byte) (r interface{}, err error) {
 	switch class {
-	case "TPV":
+	case msgClassTPV:
 		r = new(TPVReport)
-	case "SKY":
+	case msgClassSKY:
 		r = new(SKYReport)
-	case "GST":
+	case msgClassGST:
 		r = new(GSTReport)
-	case "ATT":
+	case msgClassATT:
 		r = new(ATTReport)
-	case "VERSION":
+	case msgClassVersion:
 		r = new(VERSIONReport)
-	case "DEVICES":
+	case msgClassDevices:
 		r = new(DEVICESReport)
-	case "PPS":
+	case msgClassPPS:
 		r = new(PPSReport)
-	case "ERROR":
+	case msgClassError:
 		r = new(ERRORReport)
 	}
 	return r, json.Unmarshal(bytes, &r)
