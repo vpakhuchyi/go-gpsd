@@ -1,6 +1,9 @@
 package gpsd
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type gpsdReport struct {
 	Class string `json:"class"`
@@ -27,7 +30,6 @@ example:
 		"lat":46.498293369,"lon":7.567411672,"alt":1343.127,
 		"eph":36.000,"epv":32.321,
 		"track":10.3788,"speed":0.091,"climb":-0.085,"mode":3}
-
 */
 type TPVReport struct {
 	// Fixed: "TPV"
@@ -100,7 +102,6 @@ example:
 			{"PRN":4,"el":15,"az":199,"ss":36,"used":true},
 			{"PRN":2,"el":34,"az":241,"ss":43,"used":true},
 			{"PRN":27,"el":71,"az":76,"ss":43,"used":true}]}
-
 */
 type SKYReport struct {
 	// Fixed: "SKY"
@@ -162,7 +163,6 @@ example:
 			"time":"2010-12-07T10:23:07.096Z","rms":2.440,
 			"major":1.660,"minor":1.120,"orient":68.989,
 			"lat":1.600,"lon":1.200,"alt":2.520}
-
 */
 type GSTReport struct {
 	// Fixed: "GST"
@@ -219,7 +219,6 @@ example:
 		"heading":14223.00,"mag_st":"N",
 		"pitch":169.00,"pitch_st":"N", "roll":-43.00,"roll_st":"N",
 		"dip":13641.000,"mag_x":2454.000}
-
 */
 type ATTReport struct {
 	// Fixed: "ATT"
@@ -283,10 +282,10 @@ The daemon ships a VERSION response to each client when the client first connect
 
 example:
 
-	{"class":"VERSION","version":"2.40dev",
-		"rev":"06f62e14eae9886cde907dae61c124c53eb1101f",
-		"proto_major":3,"proto_minor":1
-}
+		{"class":"VERSION","version":"2.40dev",
+			"rev":"06f62e14eae9886cde907dae61c124c53eb1101f",
+			"proto_major":3,"proto_minor":1
+	}
 */
 type VERSIONReport struct {
 	Class      string `json:"class"`
@@ -331,6 +330,16 @@ type DEVICEReport struct {
 	Native    int     `json:"native"`
 	Cycle     float64 `json:"cycle"`
 	Mincycle  float64 `json:"mincycle"`
+}
+
+// String implements fmt.Stringer interface to provide a human-readable representation of the DEVICEReport.
+func (d DEVICEReport) String() string {
+	return fmt.Sprintf(
+		"path=%s, activated=%s, flags=%d, driver=%s, subtype=%s,"+
+			" bps=%d, parity=%s, stopbits=%s, native=%d, cycle=%f, mincycle=%f",
+		d.Path, d.Activated, d.Flags, d.Driver, d.Subtype,
+		d.Bps, d.Parity, d.Stopbits, d.Native, d.Cycle, d.Mincycle,
+	)
 }
 
 // PPSReport is triggered on each pulse-per-second strobe from a device

@@ -89,7 +89,7 @@ func (s *Session) run(format string) {
 
 		switch format {
 		case formatJSON:
-			s.watch()
+			s.watchJSON()
 		case formatNMEA:
 			s.watchNMEA()
 		}
@@ -165,12 +165,6 @@ func (s *Session) deliverReport(class string, report interface{}) {
 	}
 }
 
-func (s *Session) deliverNMEAReport(class string, report string) {
-	for _, f := range s.filters[class] {
-		f(report)
-	}
-}
-
 // readLine reads a line from the reader and returns the string
 func (s *Session) readLine() (line string, err error) {
 	line, err = s.reader.ReadString('\n')
@@ -207,15 +201,27 @@ func (s *Session) watchNMEA() {
 			return
 		}
 
+		if _, ok := s.filters["DEVICES"]; !ok {
+			if strings.HasPrefix(line, `{"class":"DEVICES"`) {
+				report, err := unmarshalReport("DEVICES", []byte(line))
+				if err != nil {
+					fmt.Printf("failed to unmarshal report: %s\n", err)
+					continue
+				}
+				s.deliverReport("DEVICES", report)
+				continue
+			}
+		}
+
 		// NMEA reports are prefixed with "$" that we don't need to include in the class.
 		// Next 5 characters are the class. Here is an example of a GGA report:
 		// $GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,*47
 		// So, line[1:6] will give us "GPGGA".ss
-		s.deliverNMEAReport(line[1:6], line)
+		s.deliverReport(line[1:6], line)
 	}
 }
 
-func (s *Session) watch() {
+func (s *Session) watchJSON() {
 	// We're not using a JSON decoder because we first need to inspect
 	// the JSON string to determine its "class"
 	for {
