@@ -161,6 +161,13 @@ func (s *Session) SendCommand(command string) {
 	_, _ = fmt.Fprintf(s.socket, "?"+command+";")
 }
 
+// SendCommandSync sends a command to GPSD and returns the response string
+func (s *Session) SendCommandSync(command string) string {
+	s.SendCommand(command)
+	line, _ := s.readLine()
+	return line
+}
+
 func (s *Session) Subscribe(class string, f Filter) {
 	s.filters[class] = append(s.filters[class], f)
 }
