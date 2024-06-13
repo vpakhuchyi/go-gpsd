@@ -326,7 +326,7 @@ type DEVICEReport struct {
 	Subtype   string  `json:"subtype"`
 	Bps       int     `json:"bps"`
 	Parity    string  `json:"parity"`
-	Stopbits  string  `json:"stopbits"`
+	Stopbits  int     `json:"stopbits"`
 	Native    int     `json:"native"`
 	Cycle     float64 `json:"cycle"`
 	Mincycle  float64 `json:"mincycle"`
@@ -336,7 +336,7 @@ type DEVICEReport struct {
 func (d DEVICEReport) String() string {
 	return fmt.Sprintf(
 		"path=%s, activated=%s, flags=%d, driver=%s, subtype=%s,"+
-			" bps=%d, parity=%s, stopbits=%s, native=%d, cycle=%f, mincycle=%f",
+			" bps=%d, parity=%s, stopbits=%d, native=%d, cycle=%f, mincycle=%f",
 		d.Path, d.Activated, d.Flags, d.Driver, d.Subtype,
 		d.Bps, d.Parity, d.Stopbits, d.Native, d.Cycle, d.Mincycle,
 	)
